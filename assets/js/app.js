@@ -80,28 +80,38 @@ d3.csv("assets/data/data.csv").then
     
         chartGroup.append("g")
             .call(leftAxis);
+        
+        // Select the circles and append with group for hover together.
+        var circle = chartGroup.selectAll("circle")
+            .data(USAdata).enter().append("g");
 
-        var circlesGroup = chartGroup.selectAll("circle")
-        .data(USAdata)
-        .enter()
-        .append("circle")
-        .attr("cx", d => xBubble(d[xData]))
-        .attr("cy", d => yBubble(d[yData]))
-        .attr("r", "15")
-        .attr("class", "stateCircle")
+        // Main shape with color
+        var circleShape = circle.append("circle")
+            .attr("cx", d => xBubble(d[xData]))
+            .attr("cy", d => yBubble(d[yData]))
+            .attr("r", "15")
+            .attr("class", "stateCircle")
+        ;
+        
+        // State abbreviation in center
+        var circleLabel = circle.append("text")
+            .attr("x", d => xBubble(d[xData]))
+            .attr("y", d => yBubble(d[yData]))
+            .attr("dominant-baseline", "central")
+            .attr("class", "stateText")
+            .text(d => d.abbr)
+        ;
 
-        var circleLabels = chartGroup.selectAll("text")
-        .data(USAdata)
-        .enter()
-        .append("text")
-        .attr("x", d => xBubble(d[xData]))
-        .attr("y", d => yBubble(d[yData]))
-        .attr("dominant-baseline", "central")
-        .attr("class", "stateText")
-        .text(d => d.abbr);
-        // .html(function(d) { return (<p id="text">`${d.abbr}`</p>) } );
+        // Overlay shape for outline/hover
+        var circleOutline = circle.append("circle")
+            .attr("cx", d => xBubble(d[xData]))
+            .attr("cy", d => yBubble(d[yData]))
+            .attr("r", "15")
+            .attr("class", "clearCircle")
+        ;
 
-        var toolTip = d3.tip() // TypeError d3.tip not a function
+        // Create tooltip
+        var toolTip = d3.tip()
         .attr("class", "tooltip")
         .offset([80, -60])
         .attr("class", "d3-tip")
@@ -112,24 +122,17 @@ d3.csv("assets/data/data.csv").then
 
         chartGroup.call(toolTip);
 
-        circleLabels.on("mouseover", function(data) {
+        // Mouseover to show tooltip - outline is in CSS
+        circle.on("mouseover", function(data) {
             toolTip.show(data, this);
           })
             // onmouseout event
             .on("mouseout", function(data, index) {
               toolTip.hide(data);
-            });
-        
-        // Putting this in while I figure out why all the labels aren't showing
-        circlesGroup.on("mouseover", function(data) {
-            toolTip.show(data, this);
             })
-            // onmouseout event
-            .on("mouseout", function(data, index) {
-            toolTip.hide(data);
-            });
-        
-        // Create axes labels
+        ; 
+
+        // Create axis labels
         var healthcareYlabel = chartGroup.append("text")
             .attr("transform", "rotate(-90)")
             .attr("y", 0 - margin.left)
@@ -144,7 +147,7 @@ d3.csv("assets/data/data.csv").then
                 console.log("Loading:", yData);
             }
             )
-            ;             
+        ;             
         var smokesYlabel = chartGroup.append("text")
             .attr("transform", "rotate(-90)")
             .attr("y", 0 - margin.left+25)
@@ -157,9 +160,8 @@ d3.csv("assets/data/data.csv").then
                 yData = "smokes";
                 yTip = "% Smokers";
                 console.log("Loading:", yData);
-            }
-            )
-            ;        
+            })
+        ;        
         var obesityYlabel = chartGroup.append("text")
             .attr("transform", "rotate(-90)")
             .attr("y", 0 - margin.left+50)
@@ -172,9 +174,8 @@ d3.csv("assets/data/data.csv").then
                 yData = "obesity";
                 yTip = "% Obesity";
                 console.log("Loading:", yData);
-            }
-            )
-            ;        
+            })
+        ;
         var povertyXlabel = chartGroup.append("text")
             .attr("transform", `translate(${width / 2}, ${height + margin.top})`)
             .attr("class", "aText")
@@ -183,9 +184,8 @@ d3.csv("assets/data/data.csv").then
                 xData = "poverty";
                 xTip = "% Poverty";
                 console.log("Loading:", xData);
-            }
-            )
-            ;
+            })
+        ;
         var ageXlabel = chartGroup.append("text")
             .attr("transform", `translate(${width / 2}, ${height + margin.top + 25})`)
             .attr("class", "aText")
@@ -194,9 +194,8 @@ d3.csv("assets/data/data.csv").then
                 xData = "age";
                 xTip = "Median Age"
                 console.log("Loading:", xData);
-            }
-            )
-            ;
+            })
+        ;
         var incomeXlabel = chartGroup.append("text")
             .attr("transform", `translate(${width / 2}, ${height + margin.top + 50})`)
             .attr("class", "aText")
@@ -205,16 +204,41 @@ d3.csv("assets/data/data.csv").then
                 xData = "income";
                 xTip = "Median HH Income";
                 console.log("Loading:", xData);
-            }
-            )
-            ;
+            })
+        ;
         
+        if (xData === "income")
+            incomeXlabel.classed("active", true);
+            else incomeXlabel.classed("inactive", true);
+        if (xData === "poverty")
+            povertyXlabel.classed("active", true);
+            else povertyXlabel.classed("inactive", true);
+        if (xData === "age")
+            ageXlabel.classed("active", true);
+            else ageXlabel.classed("inactive", true);
+        
+        if (yData === "healthcare")
+            healthcareYlabel.classed("active", true);
+            else healthcareYlabel.classed("inactive", true);
+        if (yData === "smokes")
+            smokesYlabel.classed("active", true);
+            else smokesYlabel.classed("inactive", true);
+        if (yData === "obesity")
+            obesityYlabel.classed("active", true);
+            else obesityYlabel.classed("inactive", true);
+        
+        
+        // var title = chartGroup.append("text")
+        //     .attr("x", width/2)
+        //     .attr("y", -25)
+        //     .text("FIGURE:")
+        // ;
     }
     );
 }
+
 // When the browser loads, makeResponsive() is called.
 makeResponsive();
-
 
 // When the browser window is resized, makeResponsive() is called.
 d3.select(window).on("resize", makeResponsive);

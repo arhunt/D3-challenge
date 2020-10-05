@@ -6,7 +6,7 @@
 
 .active {
   font-weight: bold;
-  fill: #000;
+  fill: black;
   transition: fill 0.3s ease-out;
   text-anchor: middle;
 }
@@ -35,9 +35,14 @@
   stroke: #e3e3e3;
 }
 
-.stateCircle:hover {
-  fill: #89bdd3;
+.clearCircle {
+  fill: white;
+  opacity: 0.1;
+}
+
+.clearCircle:hover {
   stroke: black;
+  stroke-width: 10px;
 }
 
 .chart {
