@@ -55,10 +55,9 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                 data.smokes = +data.smokes;
 
             });
-        
-            // Establish axes for original and transition data
-            
+                 
             // Provide 20px padding for bubbles since they have radius 15px
+            // Two sets of x/y bubbles to support transitions
             var xBubble = d3.scaleLinear()
                 .domain(d3.extent(USAdata, d => d[xData]))
                 .range([20, width-20]);
@@ -66,7 +65,7 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
             var x2Bubble = d3.scaleLinear()
                 .domain(d3.extent(USAdata, d => d[xNewData]))
                 .range([20, width-20]);
-            
+
             var yBubble = d3.scaleLinear()
                 .domain(d3.extent(USAdata, d => d[yData]))
                 .range([height-20, 20]);
@@ -77,18 +76,18 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
             
             // Establish axes to go full width/height of the plot area
             function genBottAxis(x) {
-                var defAxis = d3.scaleLinear()
+                defAxis = d3.scaleLinear()
                     .domain(d3.extent(USAdata, d => d[x]))
                     .range([0, width]);
-                var genAxis = d3.axisBottom(defAxis);
+                genAxis = d3.axisBottom(defAxis);
                 return genAxis;
             }
 
             function genLeftAxis(y) {
-                var defAxis = d3.scaleLinear()
+                defAxis = d3.scaleLinear()
                     .domain(d3.extent(USAdata, d => d[y]))
                     .range([height, 0]);
-                var genAxis = d3.axisLeft(defAxis);
+                genAxis = d3.axisLeft(defAxis);
                 return genAxis;
             }
 
@@ -96,11 +95,9 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
             var bottomTicks = chartGroup.append("g")
                 .attr("transform", `translate(0, ${height})`)
                 .call(genBottAxis(xData));
-                // .call(bottomAxis);
         
             var leftTicks = chartGroup.append("g")
                 .call(genLeftAxis(yData));
-                // .call(leftAxis);
             
             // Select the circles and append with group for hover together.
             var circle = chartGroup.selectAll("circle")
@@ -113,7 +110,7 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                 .attr("r", "15")
                 .attr("class", "stateCircle")
             ;
-            
+
             // State abbreviation in center
             var circleLabel = circle.append("text")
                 .attr("x", d => xBubble(d[xData]))
