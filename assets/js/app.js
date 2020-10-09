@@ -1,12 +1,6 @@
-// @TODO: YOUR CODE HERE!
-// var xData = "poverty"
-// var yData = "healthcare"
-
-// var xNewData = "poverty"
-// var yNewData = "healthcare"
-
-var xData_Global;
-var yData_Global;
+// Initial variables
+var xDataGlobal = "poverty";
+var yDataGlobal = "healthcare";
 
 var xTip = "% Poverty"
 var yTip = "% Uninsured"
@@ -20,9 +14,11 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
         svgArea.remove();
     }
 
+    // create SVG and chart areas/margins
+
     // https://stackoverflow.com/questions/4787527/
     var svgWidth = document.getElementById("scatter").clientWidth;
-    var svgHeight = 800;
+    var svgHeight = 600;
 
     var margin = {
     top: 50,
@@ -34,16 +30,16 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
     var height = svgHeight - margin.top - margin.bottom;
     var width = svgWidth - margin.left - margin.right;
 
-    // Append SVG element
+    // Append chart
     var svg = d3.select("#scatter").append("svg")
         .attr("class", "img")
         .attr("height", svgHeight).attr("width", svgWidth);
 
     // Append group element
     var chartGroup = svg.append("g")
-        // .attr("class", "chart")
         .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
+    // Bring in data
     d3.csv("assets/data/data.csv").then
         (function(USAdata)
         {
@@ -60,9 +56,9 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
 
             });
         
-            // Figure out where this needs to be defined for changing the axes,
-            // Perhaps as new functions feeding in the variable clicked on?
-
+            // Establish axes for original and transition data
+            
+            // Provide 20px padding for bubbles since they have radius 15px
             var xBubble = d3.scaleLinear()
                 .domain(d3.extent(USAdata, d => d[xData]))
                 .range([20, width-20]);
@@ -70,7 +66,7 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
             var x2Bubble = d3.scaleLinear()
                 .domain(d3.extent(USAdata, d => d[xNewData]))
                 .range([20, width-20]);
-                    
+            
             var yBubble = d3.scaleLinear()
                 .domain(d3.extent(USAdata, d => d[yData]))
                 .range([height-20, 20]);
@@ -79,34 +75,32 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                 .domain(d3.extent(USAdata, d => d[yNewData]))
                 .range([height-20, 20]);
             
-            var xAxis = d3.scaleLinear()
-                .domain(d3.extent(USAdata, d => d[xData]))
-                .range([0, width]);
-            
-            var x2Axis = d3.scaleLinear()
-                .domain(d3.extent(USAdata, d => d[xNewData]))
-                .range([0, width]);
+            // Establish axes to go full width/height of the plot area
+            function genBottAxis(x) {
+                var defAxis = d3.scaleLinear()
+                    .domain(d3.extent(USAdata, d => d[x]))
+                    .range([0, width]);
+                var genAxis = d3.axisBottom(defAxis);
+                return genAxis;
+            }
 
-            var yAxis = d3.scaleLinear()
-                .domain(d3.extent(USAdata, d => d[yData]))
-                .range([height, 0]);
-            
-            var y2Axis = d3.scaleLinear()
-                .domain(d3.extent(USAdata, d => d[yNewData]))
-                .range([height, 0]);        
-            
-            var bottomAxis = d3.axisBottom(xAxis);
-            var leftAxis = d3.axisLeft(yAxis);
+            function genLeftAxis(y) {
+                var defAxis = d3.scaleLinear()
+                    .domain(d3.extent(USAdata, d => d[y]))
+                    .range([height, 0]);
+                var genAxis = d3.axisLeft(defAxis);
+                return genAxis;
+            }
 
-            var bottom2Axis = d3.axisBottom(x2Axis);
-            var left2Axis = d3.axisLeft(y2Axis);
-
+            // Create variables for axes with ticks to support transitions
             var bottomTicks = chartGroup.append("g")
                 .attr("transform", `translate(0, ${height})`)
-                .call(bottomAxis);
+                .call(genBottAxis(xData));
+                // .call(bottomAxis);
         
             var leftTicks = chartGroup.append("g")
-                .call(leftAxis);
+                .call(genLeftAxis(yData));
+                // .call(leftAxis);
             
             // Select the circles and append with group for hover together.
             var circle = chartGroup.selectAll("circle")
@@ -137,39 +131,49 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                 .attr("class", "clearCircle")
             ;
 
+            // Establish condition for transitions
             if (yNewData != yData || xNewData != xData)
                 {
+                // Move main shape/color
                 circleShape.transition().duration(1000)
                 .attr("cx", d => x2Bubble(d[xNewData]))
                 .attr("cy", d => y2Bubble(d[yNewData]));
+
+                // Move label
                 circleLabel.transition().duration(1000)
                 .attr("x", d => x2Bubble(d[xNewData]))
                 .attr("y", d => y2Bubble(d[yNewData]));
+
+                // Move outline/hoverarea
                 circleOutline.transition().duration(1000)
                 .attr("cx", d => x2Bubble(d[xNewData]))
                 .attr("cy", d => y2Bubble(d[yNewData]));
-                leftTicks.transition().duration(1000)
-                .call(left2Axis);
+
+                // switch axes
                 bottomTicks.transition().duration(1000)
-                .call(bottom2Axis);
+                .call(genBottAxis(xNewData));
+                leftTicks.transition().duration(1000)
+                .call(genLeftAxis(yNewData));
                 }
 
+            // Now that transitions are done, reset the variables
+            // for the remaining steps
             yData = yNewData;
             xData = xNewData;
 
-            // Create tooltip
+            // Create tooltip with data and state annotations
             var toolTip = d3.tip()
             .attr("class", "tooltip")
             .offset([80, -60])
             .attr("class", "d3-tip")
             .html(function(d) {
-            return (`<strong>${d.state}</strong><br>
+            return (`<strong>${d.state.toUpperCase()}</strong><br>
             ${d[xData]} ${xTip}<br>
             ${d[yData]} ${yTip}`); });
 
             chartGroup.call(toolTip);
 
-            // Mouseover to show tooltip - outline is in CSS
+            // Mouseover to show tooltip, outline hover is in CSS
             circleOutline.on("mouseover", function(data) {
                 toolTip.show(data, this);
             })
@@ -186,15 +190,16 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
             var axisLabels = chartGroup.selectAll("text")
                 .data(USAdata).enter().append("g");
 
+            
             var healthcareYlabel = chartGroup.append("text")
                 .attr("transform", "rotate(-90)")
                 .attr("y", 0 - margin.left)
                 .attr("x", 0 - (height / 2))
-                // What is this?
                 .attr("dy", "1em")
                 .attr("class", "aText")
                 .attr("id", "healthcare")
                 .text("UNINSURED RATE (%)")
+                // Handle click on label to change axis
                 .on("click", function() {
                     makeResponsive(xData, yData, xData, "healthcare");
                     yNewData = "healthcare";
@@ -207,11 +212,11 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                 .attr("transform", "rotate(-90)")
                 .attr("y", 0 - margin.left+25)
                 .attr("x", 0 - (height / 2))
-                // What is this?
                 .attr("dy", "1em")
                 .attr("class", "aText")
                 .attr("id", "smokes")
                 .text("SMOKERS (%)")
+                // Handle click on label to change axis
                 .on("click", function() {
                     makeResponsive(xData, yData, xData, "smokes");
                     yNewData = "smokes";
@@ -223,11 +228,11 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                 .attr("transform", "rotate(-90)")
                 .attr("y", 0 - margin.left+50)
                 .attr("x", 0 - (height / 2))
-                // What is this?
                 .attr("dy", "1em")
                 .attr("class", "aText")
                 .attr("id", "obesity")
                 .text("OBESITY RATE (%)")
+                 // Handle click on label to change axis
                 .on("click", function() {
                     makeResponsive(xData, yData, xData, "obesity");
                     yNewData = "obesity";
@@ -240,6 +245,7 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                 .attr("class", "aText")
                 .attr("id", "poverty")
                 .text("POVERTY RATE (%)")
+                // Handle click on label to change axis
                 .on("click", function() {
                     makeResponsive(xData, yData, "poverty", yData);
                     xNewData = "poverty";
@@ -252,6 +258,7 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                 .attr("class", "aText")
                 .attr("id", "age")
                 .text("MEDIAN AGE")
+                 // Handle click on label to change axis
                 .on("click", function() {
                     makeResponsive(xData, yData, "age", yData);
                     xNewData = "age";
@@ -264,6 +271,7 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                 .attr("class", "aText")
                 .attr("id", "income")
                 .text("MEDIAN HOUSEHOLD INCOME ($)")
+                // Handle click on label to change axis
                 .on("click", function() {
                     makeResponsive(xData, yData, "income", yData);
                     xNewData = "income";
@@ -271,25 +279,26 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
                     console.log("Loading new X:", xNewData)
                 })
             ;
-                        
+            
+            // CSS class/format axis labels based on what is selected
             if (xData === "income")
-                incomeXlabel.classed("activex", true);
+                incomeXlabel.classed("active", true);
                 else incomeXlabel.classed("inactive", true);
             if (xData === "poverty")
-                povertyXlabel.classed("activex", true);
+                povertyXlabel.classed("active", true);
                 else povertyXlabel.classed("inactive", true);
             if (xData === "age")
-                ageXlabel.classed("activex", true);
+                ageXlabel.classed("active", true);
                 else ageXlabel.classed("inactive", true);
             
             if (yData === "healthcare")
-                healthcareYlabel.classed("activey", true);
+                healthcareYlabel.classed("active", true);
                 else healthcareYlabel.classed("inactive", true);
             if (yData === "smokes")
-                smokesYlabel.classed("activey", true);
+                smokesYlabel.classed("active", true);
                 else smokesYlabel.classed("inactive", true);
             if (yData === "obesity")
-                obesityYlabel.classed("activey", true);
+                obesityYlabel.classed("active", true);
                 else obesityYlabel.classed("inactive", true);
             
             xDataGlobal = xData;
@@ -300,36 +309,8 @@ function makeResponsive(xData, yData, xNewData, yNewData) {
 }
 
 // When the browser loads, makeResponsive() is called.
-makeResponsive("poverty", "healthcare", "poverty", "healthcare");
+makeResponsive(xDataGlobal, yDataGlobal, xDataGlobal, yDataGlobal);
 
-// var selectedX;
-// var selectedY;
-
-// function values()
-// {
-//     selectedX = document.getElementsByClassName("activex")[0].id;
-//     console.log(selectedX);
-
-//     selectedY = document.getElementsByClassName("activey")[0].id
-//     console.log(selectedY);
-
-//     // return selectedX, selectedY;
-// }
-
-// window.onload = values;
-
-// When the browser window is resized, makeResponsive() is called.
-// d3.select(window).on("resize", makeResponsive);
-
-// d3.select(window).on("resize", function() {
-//     setTimeout(()=>{
-//         var selectedX = document.getElementsByClassName("activex")[0].id;
-//         var selectedY = document.getElementsByClassName("activey")[0].id;
-//         makeResponsive(selectedX, selectedY, selectedX, selectedY);
-//     }, 1000);
-// }
-// );
-
-// TA Benji for the ()=> win!
+// Thanks TA Benji for the ()=> win!
 d3.select(window).on("resize",
     ()=> makeResponsive(xDataGlobal, yDataGlobal, xDataGlobal, yDataGlobal));
