@@ -4,7 +4,14 @@
   text-anchor: middle;
 }
 
-.active {
+.activey {
+  font-weight: bold;
+  fill: black;
+  transition: fill 0.3s ease-out;
+  text-anchor: middle;
+}
+
+.activex {
   font-weight: bold;
   fill: black;
   transition: fill 0.3s ease-out;
